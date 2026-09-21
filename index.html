@@ -9,11 +9,13 @@
 :root{
   --bg:#fbfaf7;--fg:#1c1b19;--muted:#6b675f;--card:#ffffff;--line:#e4e0d7;
   --accent:#bf5700;--accent-fg:#ffffff;--chip:#f1ede4;--warn-bg:#fff4e0;--warn-fg:#6a4300;
+  --flower:#c2367a;--flower-bg:#fdeaf2;
 }
 @media (prefers-color-scheme:dark){
   :root{
     --bg:#161513;--fg:#f0ede6;--muted:#a19c91;--card:#1f1e1b;--line:#33312c;
     --accent:#e8813a;--accent-fg:#161513;--chip:#2a2824;--warn-bg:#3a2d14;--warn-fg:#f3d9a4;
+    --flower:#ff8fc0;--flower-bg:#3a2230;
   }
 }
 *{box-sizing:border-box}
@@ -33,8 +35,15 @@ input[type=search],input[type=text],input[type=url],input[type=datetime-local],s
 .check{display:flex;align-items:center;gap:8px;margin:4px 0 12px;color:var(--muted);font-size:.92rem}
 .count{color:var(--muted);font-size:.9rem;margin:0 0 10px}
 ul.list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-.card h3{margin:0 0 4px;font-size:1.05rem;line-height:1.3}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card h3{margin:0 0 4px;font-size:1.05rem;line-height:1.3;padding-right:76px}
+.flower-btn{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--flower);cursor:pointer;font:inherit}
+.flower-btn:hover:not(:disabled){background:var(--flower-bg)}
+.flower-btn.flowered{background:var(--flower-bg);border-color:var(--flower)}
+.flower-btn:disabled{cursor:default;opacity:.9}
+.flower-icon{display:flex;line-height:0}
+.flower-icon img,.flower-icon svg{display:block}
+.flower-count{font-size:.85rem;font-weight:600;min-width:1ch}
 .meta{color:var(--muted);font-size:.92rem;margin:2px 0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .chip{background:var(--chip);border-radius:999px;padding:2px 10px;font-size:.78rem}
@@ -108,18 +117,97 @@ footer{margin-top:40px;color:var(--muted);font-size:.85rem}
 <script>
 "use strict";
 
-// Set to your API Gateway URL when the backend exists. Empty means the form stays disabled.
-const SUBMIT_ENDPOINT = "";
+// Set to your HTTP API's invoke URL once the backend exists, no trailing
+// slash, e.g. "https://abc123.execute-api.us-east-1.amazonaws.com".
+// Empty means the page falls back to the hardcoded sample events below
+// and the submit form stays disabled.
+const API_BASE = "";
 
 const SCHOOLS = [{ id: "ut-austin", name: "UT Austin" }];
 const TYPES = ["Career fair", "Networking", "Recruiting mixer", "Tech talk", "Workshop", "Other"];
 
-// Placeholder data. Replace with GET /events from the API once it exists.
-const EVENTS = [
-  { id: "s1", school: "ut-austin", title: "Sample: Recruiting mixer", company: "Company A (sample)", type: "Recruiting mixer", start: "2026-10-08T18:00", end: "2026-10-08T20:00", location: "Sample location", url: "", sample: true },
-  { id: "s2", school: "ut-austin", title: "Sample: Tech talk on distributed systems", company: "Company B (sample)", type: "Tech talk", start: "2026-10-12T17:30", end: "2026-10-12T18:30", location: "Sample hall", url: "", sample: true },
-  { id: "s3", school: "ut-austin", title: "Sample: Fall career fair", company: "Multiple (sample)", type: "Career fair", start: "2026-10-15T10:00", end: "2026-10-15T15:00", location: "Sample center", url: "", sample: true }
+// Used only when API_BASE is empty, or the API request fails.
+const SAMPLE_EVENTS = [
+  { id: "s1", school: "ut-austin", title: "Sample: Recruiting mixer", company: "Company A (sample)", type: "Recruiting mixer", start: "2026-10-08T18:00", end: "2026-10-08T20:00", location: "Sample location", url: "", sample: true, flowerCount: 4 },
+  { id: "s2", school: "ut-austin", title: "Sample: Tech talk on distributed systems", company: "Company B (sample)", type: "Tech talk", start: "2026-10-12T17:30", end: "2026-10-12T18:30", location: "Sample hall", url: "", sample: true, flowerCount: 11 },
+  { id: "s3", school: "ut-austin", title: "Sample: Fall career fair", company: "Multiple (sample)", type: "Career fair", start: "2026-10-15T10:00", end: "2026-10-15T15:00", location: "Sample center", url: "", sample: true, flowerCount: 2 }
 ];
+
+// Flower (interest) icon. Looks for flower.png next to this file first;
+// falls back to an inline SVG if that file is missing so the button never
+// breaks the page.
+const FLOWER_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><g fill="currentColor"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="5" rx="3" ry="4"/><ellipse cx="12" cy="19" rx="3" ry="4"/><ellipse cx="5" cy="12" rx="4" ry="3"/><ellipse cx="19" cy="12" rx="4" ry="3"/></g></svg>';
+
+function flowerIcon() {
+  const span = document.createElement("span");
+  span.className = "flower-icon";
+  const img = document.createElement("img");
+  img.src = "flower.png";
+  img.alt = "";
+  img.width = 18;
+  img.height = 18;
+  img.addEventListener("error", () => { span.innerHTML = FLOWER_SVG; }, { once: true });
+  span.appendChild(img);
+  return span;
+}
+
+// Per-browser only. This does not stop someone from flowering the same
+// event again in a private window or a different browser; it just keeps
+// one person from repeat-clicking in the same session.
+function getFlowered() {
+  try { return new Set(JSON.parse(localStorage.getItem("flowered-events") || "[]")); }
+  catch (e) { return new Set(); }
+}
+function saveFlowered(set) {
+  try { localStorage.setItem("flowered-events", JSON.stringify([...set])); } catch (e) { /* ignore */ }
+}
+
+async function flowerEvent(ev, btn, countEl) {
+  const key = ev.school + ":" + ev.id;
+  const flowered = getFlowered();
+  if (flowered.has(key)) return;
+
+  const prevCount = ev.flowerCount || 0;
+  ev.flowerCount = prevCount + 1;
+  countEl.textContent = ev.flowerCount;
+  btn.classList.add("flowered");
+  btn.disabled = true;
+  flowered.add(key);
+  saveFlowered(flowered);
+
+  if (!API_BASE) return; // demo mode: not persisted past this page load
+
+  try {
+    const r = await fetch(`${API_BASE}/events/${encodeURIComponent(ev.id)}/flower?school=${encodeURIComponent(ev.school)}`, { method: "POST" });
+    const data = await r.json().catch(() => ({}));
+
+    if (r.status === 409) {
+      // Same network already flowered this one recently. Keep it marked
+      // as flowered in this browser too, but the count did not actually
+      // go up, so show the real number instead of our optimistic guess.
+      ev.flowerCount = typeof data.flowerCount === "number" ? data.flowerCount : prevCount;
+      countEl.textContent = ev.flowerCount;
+      alert("Looks like this one's already been flowered from your network recently.");
+      return;
+    }
+    if (!r.ok) throw new Error(String(r.status));
+
+    if (typeof data.flowerCount === "number") {
+      ev.flowerCount = data.flowerCount;
+      countEl.textContent = ev.flowerCount;
+    }
+  } catch (err) {
+    ev.flowerCount = prevCount;
+    countEl.textContent = prevCount;
+    btn.classList.remove("flowered");
+    btn.disabled = false;
+    flowered.delete(key);
+    saveFlowered(flowered);
+  }
+}
+
+// Populated from the API on load, or from SAMPLE_EVENTS as a fallback.
+let EVENTS = SAMPLE_EVENTS;
 
 const $ = (id) => document.getElementById(id);
 
@@ -176,6 +264,22 @@ function downloadIcs(ev) {
 function card(ev) {
   const li = document.createElement("li");
   li.className = "card";
+
+  const flowerBtn = document.createElement("button");
+  flowerBtn.type = "button";
+  flowerBtn.className = "flower-btn";
+  flowerBtn.setAttribute("aria-label", "Show interest with a flower");
+  flowerBtn.appendChild(flowerIcon());
+  const flowerCount = document.createElement("span");
+  flowerCount.className = "flower-count";
+  flowerCount.textContent = ev.flowerCount || 0;
+  flowerBtn.appendChild(flowerCount);
+  if (getFlowered().has(ev.school + ":" + ev.id)) {
+    flowerBtn.classList.add("flowered");
+    flowerBtn.disabled = true;
+  }
+  flowerBtn.addEventListener("click", () => flowerEvent(ev, flowerBtn, flowerCount));
+  li.appendChild(flowerBtn);
 
   const h = document.createElement("h3");
   h.textContent = ev.title;
@@ -253,27 +357,51 @@ function render() {
   $("count").textContent = rows.length + (rows.length === 1 ? " event" : " events");
 }
 
-function init() {
+function fillCompanyFilter() {
+  const current = $("company").value;
+  const companies = Array.from(new Set(EVENTS.map((e) => e.company))).sort();
+  $("company").replaceChildren();
+  fillSelect($("company"), [{ label: "All", value: "" }, ...companies.map((c) => ({ label: c, value: c }))], false);
+  if (companies.includes(current)) $("company").value = current;
+}
+
+async function loadEvents() {
+  if (!API_BASE) return; // stay on SAMPLE_EVENTS
+  try {
+    const school = $("school").value || SCHOOLS[0].id;
+    const r = await fetch(`${API_BASE}/events?school=${encodeURIComponent(school)}`);
+    if (!r.ok) throw new Error(String(r.status));
+    const data = await r.json();
+    if (Array.isArray(data)) EVENTS = data;
+  } catch (err) {
+    console.error("Falling back to sample events:", err);
+    EVENTS = SAMPLE_EVENTS;
+  }
+}
+
+async function init() {
   fillSelect($("school"), SCHOOLS.map((s) => ({ label: s.name, value: s.id })), false);
   fillSelect($("f-school"), SCHOOLS.map((s) => ({ label: s.name, value: s.id })), false);
   fillSelect($("type"), TYPES.map((t) => ({ label: t, value: t })), false);
   $("type").insertBefore(new Option("All", ""), $("type").firstChild);
   $("type").value = "";
   fillSelect($("f-type"), TYPES.map((t) => ({ label: t, value: t })), false);
-  const companies = Array.from(new Set(EVENTS.map((e) => e.company))).sort();
-  fillSelect($("company"), companies.map((c) => ({ label: c, value: c })), false);
+  fillCompanyFilter();
 
   ["q", "school", "company", "type", "upcoming"].forEach((id) => {
-    $(id).addEventListener(id === "q" ? "input" : "change", render);
+    $(id).addEventListener(id === "q" ? "input" : "change", async () => {
+      if (id === "school") { await loadEvents(); fillCompanyFilter(); }
+      render();
+    });
   });
 
-  if (SUBMIT_ENDPOINT) {
+  if (API_BASE) {
     $("submit-note").textContent = "Submissions are reviewed before they appear.";
     $("f-submit").disabled = false;
   }
   $("form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!SUBMIT_ENDPOINT) return;
+    if (!API_BASE) return;
     const url = $("f-url").value.trim();
     if (url && !safeUrl(url)) { alert("Link must start with http:// or https://"); return; }
     if (!$("f-title").value.trim() || !$("f-company").value.trim() || !$("f-start").value) {
@@ -285,7 +413,7 @@ function init() {
       type: $("f-type").value, start: $("f-start").value, end: $("f-end").value, location: $("f-loc").value.trim(), url
     };
     try {
-      const r = await fetch(SUBMIT_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const r = await fetch(`${API_BASE}/events`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!r.ok) throw new Error(String(r.status));
       $("form").reset();
       $("submit-note").textContent = "Thanks. Your event is waiting for review.";
@@ -294,6 +422,8 @@ function init() {
     }
   });
 
+  await loadEvents();
+  fillCompanyFilter();
   render();
 }
 

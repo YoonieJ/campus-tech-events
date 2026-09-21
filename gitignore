@@ -1,0 +1,33 @@
+# AWS credentials and secrets - never commit these
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+aws-exports.js
+
+# Node (if you add npm packages, a build step, or local testing later)
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Infrastructure-as-code build output (only relevant if you add SAM/CDK/Terraform)
+.aws-sam/
+cdk.out/
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Lambda deployment zips, if you start zipping instead of pasting into the console
+*.zip
+
+# Deploy planning docs (kept local, not pushed to the repo)
+deploy.md
+backend-deploy.md
+
+# Local logs and OS/editor clutter
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
