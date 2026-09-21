@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Campus Tech Events</title>
+<meta name="description" content="Student-submitted tech company events, career fairs, and talks for your campus, in one place.">
+<style>
+:root{
+  --bg:#fbfaf7;--fg:#1c1b19;--muted:#6b675f;--card:#ffffff;--line:#e4e0d7;
+  --accent:#bf5700;--accent-fg:#ffffff;--chip:#f1ede4;--warn-bg:#fff4e0;--warn-fg:#6a4300;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#161513;--fg:#f0ede6;--muted:#a19c91;--card:#1f1e1b;--line:#33312c;
+    --accent:#e8813a;--accent-fg:#161513;--chip:#2a2824;--warn-bg:#3a2d14;--warn-fg:#f3d9a4;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 64px}
+header{padding:32px 0 16px}
+h1{margin:0 0 6px;font-size:1.75rem;line-height:1.2}
+.sub{margin:0;color:var(--muted)}
+.banner{background:var(--warn-bg);color:var(--warn-fg);border-radius:10px;padding:10px 14px;margin:16px 0;font-size:.92rem}
+.controls{display:grid;grid-template-columns:1fr;gap:10px;margin:16px 0}
+@media (min-width:640px){.controls{grid-template-columns:2fr 1fr 1fr 1fr}}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+input[type=search],input[type=text],input[type=url],input[type=datetime-local],select,textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit
+}
+.check{display:flex;align-items:center;gap:8px;margin:4px 0 12px;color:var(--muted);font-size:.92rem}
+.count{color:var(--muted);font-size:.9rem;margin:0 0 10px}
+ul.list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card h3{margin:0 0 4px;font-size:1.05rem;line-height:1.3}
+.meta{color:var(--muted);font-size:.92rem;margin:2px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{background:var(--chip);border-radius:999px;padding:2px 10px;font-size:.78rem}
+.chip.sample{background:var(--warn-bg);color:var(--warn-fg)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+button,a.btn{font:inherit;cursor:pointer;border-radius:8px;padding:8px 12px;border:1px solid var(--line);background:var(--card);color:var(--fg);text-decoration:none;display:inline-block}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button:disabled{opacity:.55;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+section.submit{margin-top:40px;border-top:1px solid var(--line);padding-top:24px}
+section.submit h2{margin:0 0 6px;font-size:1.3rem}
+.grid2{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:640px){.grid2{grid-template-columns:1fr 1fr}}
+.field{margin-bottom:10px}
+footer{margin-top:40px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Campus Tech Events</h1>
+    <p class="sub">Company events, career fairs, and tech talks for your campus, collected by students in one place.</p>
+  </header>
+
+  <div class="banner" role="note">Early preview. Events marked SAMPLE are placeholders, not real listings. Student submissions open soon.</div>
+
+  <div class="controls">
+    <div>
+      <label for="q">Search</label>
+      <input id="q" type="search" placeholder="Company, title, location">
+    </div>
+    <div>
+      <label for="school">School</label>
+      <select id="school"></select>
+    </div>
+    <div>
+      <label for="company">Company</label>
+      <select id="company"><option value="">All</option></select>
+    </div>
+    <div>
+      <label for="type">Type</label>
+      <select id="type"><option value="">All</option></select>
+    </div>
+  </div>
+  <label class="check"><input id="upcoming" type="checkbox" checked> Upcoming only</label>
+  <p class="count" id="count" aria-live="polite"></p>
+  <ul class="list" id="list"></ul>
+
+  <section class="submit" aria-labelledby="submit-h">
+    <h2 id="submit-h">Submit an event</h2>
+    <p class="sub" id="submit-note">Submissions are not open yet.</p>
+    <form id="form" novalidate>
+      <div class="grid2">
+        <div class="field"><label for="f-title">Event title</label><input id="f-title" type="text" maxlength="120" required></div>
+        <div class="field"><label for="f-company">Company</label><input id="f-company" type="text" maxlength="80" required></div>
+        <div class="field"><label for="f-type">Type</label><select id="f-type"></select></div>
+        <div class="field"><label for="f-school">School</label><select id="f-school"></select></div>
+        <div class="field"><label for="f-start">Start</label><input id="f-start" type="datetime-local" required></div>
+        <div class="field"><label for="f-end">End (optional)</label><input id="f-end" type="datetime-local"></div>
+        <div class="field"><label for="f-loc">Location</label><input id="f-loc" type="text" maxlength="120"></div>
+        <div class="field"><label for="f-url">Link (https only)</label><input id="f-url" type="url" maxlength="300"></div>
+      </div>
+      <button class="primary" id="f-submit" type="submit" disabled>Submit for review</button>
+    </form>
+  </section>
+
+  <footer>Not affiliated with any school or company. Check the organizer's page before attending.</footer>
+</div>
+
+<script>
+"use strict";
+
+// Set to your API Gateway URL when the backend exists. Empty means the form stays disabled.
+const SUBMIT_ENDPOINT = "";
+
+const SCHOOLS = [{ id: "ut-austin", name: "UT Austin" }];
+const TYPES = ["Career fair", "Networking", "Recruiting mixer", "Tech talk", "Workshop", "Other"];
+
+// Placeholder data. Replace with GET /events from the API once it exists.
+const EVENTS = [
+  { id: "s1", school: "ut-austin", title: "Sample: Recruiting mixer", company: "Company A (sample)", type: "Recruiting mixer", start: "2026-10-08T18:00", end: "2026-10-08T20:00", location: "Sample location", url: "", sample: true },
+  { id: "s2", school: "ut-austin", title: "Sample: Tech talk on distributed systems", company: "Company B (sample)", type: "Tech talk", start: "2026-10-12T17:30", end: "2026-10-12T18:30", location: "Sample hall", url: "", sample: true },
+  { id: "s3", school: "ut-austin", title: "Sample: Fall career fair", company: "Multiple (sample)", type: "Career fair", start: "2026-10-15T10:00", end: "2026-10-15T15:00", location: "Sample center", url: "", sample: true }
+];
+
+const $ = (id) => document.getElementById(id);
+
+function fillSelect(sel, items, withAll) {
+  if (withAll) sel.appendChild(new Option("All", ""));
+  items.forEach((it) => sel.appendChild(new Option(it.label, it.value)));
+}
+
+function safeUrl(u) {
+  try {
+    const p = new URL(u);
+    return p.protocol === "https:" || p.protocol === "http:" ? p.href : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function fmt(s) {
+  const d = new Date(s);
+  if (isNaN(d)) return "";
+  return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function icsEscape(t) {
+  return String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+}
+
+function icsTime(s) {
+  return s.replace(/[-:]/g, "") + (s.length === 16 ? "00" : "");
+}
+
+function downloadIcs(ev) {
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Campus Tech Events//EN", "BEGIN:VEVENT",
+    "UID:" + ev.id + "@campus-tech-events",
+    "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""),
+    "DTSTART:" + icsTime(ev.start),
+    ev.end ? "DTEND:" + icsTime(ev.end) : "",
+    "SUMMARY:" + icsEscape(ev.title),
+    "LOCATION:" + icsEscape(ev.location),
+    "DESCRIPTION:" + icsEscape(ev.company + (ev.url ? " " + ev.url : "")),
+    "END:VEVENT", "END:VCALENDAR"
+  ].filter(Boolean);
+  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "event.ics";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function card(ev) {
+  const li = document.createElement("li");
+  li.className = "card";
+
+  const h = document.createElement("h3");
+  h.textContent = ev.title;
+  li.appendChild(h);
+
+  const m1 = document.createElement("p");
+  m1.className = "meta";
+  m1.textContent = ev.company;
+  li.appendChild(m1);
+
+  const m2 = document.createElement("p");
+  m2.className = "meta";
+  m2.textContent = fmt(ev.start) + (ev.location ? " | " + ev.location : "");
+  li.appendChild(m2);
+
+  const chips = document.createElement("div");
+  chips.className = "chips";
+  const c1 = document.createElement("span");
+  c1.className = "chip";
+  c1.textContent = ev.type;
+  chips.appendChild(c1);
+  if (ev.sample) {
+    const c2 = document.createElement("span");
+    c2.className = "chip sample";
+    c2.textContent = "SAMPLE";
+    chips.appendChild(c2);
+  }
+  li.appendChild(chips);
+
+  const act = document.createElement("div");
+  act.className = "actions";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = "Add to calendar";
+  b.addEventListener("click", () => downloadIcs(ev));
+  act.appendChild(b);
+  const link = safeUrl(ev.url);
+  if (link) {
+    const a = document.createElement("a");
+    a.className = "btn";
+    a.href = link;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = "Event page";
+    act.appendChild(a);
+  }
+  li.appendChild(act);
+  return li;
+}
+
+function render() {
+  const q = $("q").value.trim().toLowerCase();
+  const school = $("school").value;
+  const company = $("company").value;
+  const type = $("type").value;
+  const upcoming = $("upcoming").checked;
+  const now = new Date();
+
+  const rows = EVENTS
+    .filter((e) => (!school || e.school === school) && (!company || e.company === company) && (!type || e.type === type))
+    .filter((e) => !upcoming || new Date(e.end || e.start) >= now)
+    .filter((e) => !q || (e.title + " " + e.company + " " + e.location).toLowerCase().includes(q))
+    .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+  const list = $("list");
+  list.replaceChildren();
+  if (!rows.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = "No events match. Try clearing a filter.";
+    list.appendChild(li);
+  } else {
+    rows.forEach((e) => list.appendChild(card(e)));
+  }
+  $("count").textContent = rows.length + (rows.length === 1 ? " event" : " events");
+}
+
+function init() {
+  fillSelect($("school"), SCHOOLS.map((s) => ({ label: s.name, value: s.id })), false);
+  fillSelect($("f-school"), SCHOOLS.map((s) => ({ label: s.name, value: s.id })), false);
+  fillSelect($("type"), TYPES.map((t) => ({ label: t, value: t })), false);
+  $("type").insertBefore(new Option("All", ""), $("type").firstChild);
+  $("type").value = "";
+  fillSelect($("f-type"), TYPES.map((t) => ({ label: t, value: t })), false);
+  const companies = Array.from(new Set(EVENTS.map((e) => e.company))).sort();
+  fillSelect($("company"), companies.map((c) => ({ label: c, value: c })), false);
+
+  ["q", "school", "company", "type", "upcoming"].forEach((id) => {
+    $(id).addEventListener(id === "q" ? "input" : "change", render);
+  });
+
+  if (SUBMIT_ENDPOINT) {
+    $("submit-note").textContent = "Submissions are reviewed before they appear.";
+    $("f-submit").disabled = false;
+  }
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!SUBMIT_ENDPOINT) return;
+    const url = $("f-url").value.trim();
+    if (url && !safeUrl(url)) { alert("Link must start with http:// or https://"); return; }
+    if (!$("f-title").value.trim() || !$("f-company").value.trim() || !$("f-start").value) {
+      alert("Title, company, and start time are required.");
+      return;
+    }
+    const body = {
+      school: $("f-school").value, title: $("f-title").value.trim(), company: $("f-company").value.trim(),
+      type: $("f-type").value, start: $("f-start").value, end: $("f-end").value, location: $("f-loc").value.trim(), url
+    };
+    try {
+      const r = await fetch(SUBMIT_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error(String(r.status));
+      $("form").reset();
+      $("submit-note").textContent = "Thanks. Your event is waiting for review.";
+    } catch (err) {
+      $("submit-note").textContent = "Submission failed. Please try again later.";
+    }
+  });
+
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
